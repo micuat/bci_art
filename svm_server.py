@@ -5,6 +5,7 @@ from OSC import OSCServer
 import sys
 from time import sleep
 import numpy as np
+from sklearn import svm
 
 server = OSCServer( ("localhost", 12000) )
 server.timeout = 0
@@ -22,21 +23,32 @@ server.handle_timeout = types.MethodType(handle_timeout, server)
 
 class Dataset:
     state = "none"
+    maxSampleNum = 50
+    classifier_ready = False
+
     def __init__(self):
         return
+
+    def initialize(self):
+        self.state = "none"
+
     def startRecording(self):
         if self.state == "none":
             self.state = "recording_initial"
+
     def stopRecording(self):
         if self.state == "recording_initial" or self.state == "recording":
             self.state = "recorded"
+
     def record(self, sample):
         if self.state == "recording_initial":
             self.feat_matrix = np.copy(sample)
             self.state = "recording"
         elif self.state == "recording":
             self.feat_matrix = np.concatenate((self.feat_matrix, sample))
-            print self.feat_matrix
+            if self.feat_matrix.shape[0] >= self.maxSampleNum:
+                print "done"
+                self.state = "done"
 
 feat_vector = np.array([[0.0, 0.0, 0.0, 0.0]])
 feat_vector_update = [0, 0, 0, 0]
@@ -60,7 +72,21 @@ def power_abs_callback(path, tags, args, source):
     if np.all(feat_vector_update) == 1:
         datasets[0].record(feat_vector)
         datasets[1].record(feat_vector)
-        #print feat_vector
+        
+        if datasets[0].state == "done" and datasets[1].state == "done":
+            global classifier
+            classifier = svm.SVC()
+            X = np.concatenate((datasets[0].feat_matrix, datasets[1].feat_matrix))
+            y = np.concatenate((np.zeros((datasets[0].feat_matrix.shape[0], 1)), np.ones((datasets[1].feat_matrix.shape[0], 1))))
+            classifier.fit(X, y)
+            datasets[0].initialize()
+            datasets[1].initialize()
+            datasets[0].classifier_ready = True
+
+        if datasets[0].classifier_ready:
+            print classifier.predict(feat_vector)
+        
+        print feat_vector
         feat_vector_update[0] = 0
         feat_vector_update[1] = 0
         feat_vector_update[2] = 0
