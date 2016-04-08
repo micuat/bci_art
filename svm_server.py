@@ -31,8 +31,10 @@ class Dataset:
     state = "none"
     maxSampleNum = 30
     classifier_ready = False
+    identifier = 0
 
-    def __init__(self):
+    def __init__(self, id):
+        self.identifier = id
         return
 
     def initialize(self):
@@ -55,6 +57,9 @@ class Dataset:
             if self.feat_matrix.shape[0] >= self.maxSampleNum:
                 print "done"
                 print self.feat_matrix
+                m = OSCMessage("/bci_art/svm/done/" + str(self.identifier))
+                client.send(m)
+
                 self.state = "done"
 
 def control_record_callback(path, tags, args, source):
@@ -76,7 +81,7 @@ def quit_callback(path, tags, args, source):
     run = False
 
 eegArray = []
-datasets = [Dataset(), Dataset()]
+datasets = [Dataset(1), Dataset(2)]
 
 def compute_feature_vector(eegdata, Fs):
     # https://github.com/bcimontreal/bci_workshop/blob/master/bci_workshop_tools.py
@@ -133,7 +138,10 @@ def eeg_callback(path, tags, args, source):
     global eegArray
     if eegArray == []:
         eegArray = [eeg]
-    elif len(eegArray) == 220:
+    else:
+        eegArray = np.concatenate((eegArray, [eeg]))
+    
+    if len(eegArray) == 220:
         feat_vector = compute_feature_vector(eegArray, 220)
         
         datasets[0].record(feat_vector)
@@ -145,9 +153,15 @@ def eeg_callback(path, tags, args, source):
             X = np.concatenate((datasets[0].feat_matrix, datasets[1].feat_matrix))
             y = np.concatenate((np.zeros((datasets[0].feat_matrix.shape[0], 1)), np.ones((datasets[1].feat_matrix.shape[0], 1))))
             classifier.fit(X, y)
+            
+            m = OSCMessage("/bci_art/svm/score")
+            m.append(classifier.score(X, y))
+            client.send(m)
+            
             datasets[0].initialize()
             datasets[1].initialize()
             datasets[0].classifier_ready = True
+            datasets[1].classifier_ready = True
 
         if datasets[0].classifier_ready:
             prediction_result = classifier.predict(feat_vector)
@@ -157,9 +171,7 @@ def eeg_callback(path, tags, args, source):
             client.send(m)
         
         print feat_vector
-        eegArray = [eeg]
-    else:
-        eegArray = np.concatenate((eegArray, [eeg]))
+        eegArray = eegArray[110:]
 
 def default_callback(path, tags, args, source):
     # do nothing
@@ -171,7 +183,6 @@ server.addMsgHandler( "/bci_art/svm/start/2", control_record_callback )
 server.addMsgHandler( "/bci_art/quit", quit_callback )
 server.addMsgHandler( "default", default_callback )
 
-# user script that's called by the game engine every frame
 def each_frame():
     # clear timed_out flag
     server.timed_out = False
@@ -179,11 +190,8 @@ def each_frame():
     while not server.timed_out:
         server.handle_request()
 
-# simulate a "game engine"
 while run:
-    # do the game stuff:
     sleep(0.1)
-    # call user script
     each_frame()
 
 server.close()

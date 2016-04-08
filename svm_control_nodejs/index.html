@@ -44,20 +44,29 @@
         rect(width * 0.5, 0, width * 0.5, height);
       }
       
+      function mousePressed() {
+        if(mouseY > 0 && mouseY < height && mouseX > 0 && mouseX < width) {
+          if(mouseX < width * 0.5)
+            socket.emit('bci command', "/bci_art/svm/start/1");
+          else
+            socket.emit('bci command', "/bci_art/svm/start/2");
+        }
+      }
+      
       // socket.io
       
       var socket = io();
       $('form').submit(function(){
-        socket.emit('chat message', $('#m').val());
+        socket.emit('bci command', $('#m').val());
         $('#m').val('');
         return false;
       });
-      socket.on('chat message', function(msg){
+      socket.on('bci command', function(msg){
         $('#messages').prepend($('<li>').text(msg));
-        if(msg == "/bci_art/svm/start/1/received") {
+        if(msg == "/bci_art/svm/done/1") {
           lcolor = color(0);
         }
-        if(msg == "/bci_art/svm/start/2/received") {
+        if(msg == "/bci_art/svm/done/2") {
           rcolor = color(0);
         }
       });

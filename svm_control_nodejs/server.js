@@ -10,7 +10,7 @@ var oscServer = new osc.Server(13000, '127.0.0.1');
 oscServer.on("message", function (msg, rinfo) {
     console.log("message:");
     console.log(msg);
-    io.emit('chat message', msg);
+    io.emit('bci command', msg);
 });
 
 app.get('/', function(req, res){
@@ -23,8 +23,8 @@ io.on('connection', function(socket){
     socket.on('disconnect', function(){
         console.log('user disconnected');
     });
-    socket.on('chat message', function(msg){
-        io.emit('chat message', msg);
+    socket.on('bci command', function(msg){
+        io.emit('bci command', msg);
         svm_python.send(msg);
         console.log('message: ' + msg);
     }
