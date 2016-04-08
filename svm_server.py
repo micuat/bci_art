@@ -1,14 +1,20 @@
 # Muse command
 # muse-io --device Muse-7042 --osc 'osc.udp://localhost:12000'
 
-from OSC import OSCServer
+from OSC import OSCServer, OSCClient, OSCMessage
 import sys
 from time import sleep
 import numpy as np
 from sklearn import svm
 
+# muse-io server
 server = OSCServer( ("localhost", 12000) )
 server.timeout = 0
+
+# node.js
+client = OSCClient()
+client.connect( ("localhost", 13000) )
+
 run = True
 
 # this method of reporting timeouts only works by convention
@@ -84,7 +90,11 @@ def power_abs_callback(path, tags, args, source):
             datasets[0].classifier_ready = True
 
         if datasets[0].classifier_ready:
-            print classifier.predict(feat_vector)
+            prediction_result = classifier.predict(feat_vector)
+            print prediction_result
+            m = OSCMessage("/bci_art/svm/prediction")
+            m.append(prediction_result)
+            client.send(m)
         
         print feat_vector
         feat_vector_update[0] = 0
@@ -96,9 +106,13 @@ def control_record_callback(path, tags, args, source):
     command = path.split("/")[4]
     if command == "1":
         print "1st sample set"
+        m = OSCMessage("/bci_art/svm/start/1/received")
+        client.send(m)
         datasets[0].startRecording()
     elif command == "2":
         print "2nd sample set"
+        m = OSCMessage("/bci_art/svm/start/2/received")
+        client.send(m)
         datasets[1].startRecording()
 
 def quit_callback(path, tags, args, source):

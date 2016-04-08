@@ -4,6 +4,13 @@ var io = require('socket.io')(http);
 
 var osc = require('node-osc');
 var svm_python = new osc.Client('127.0.0.1', 12000);
+var oscServer = new osc.Server(13000, '127.0.0.1');
+
+oscServer.on("message", function (msg, rinfo) {
+    console.log("message:");
+    console.log(msg);
+    io.emit('chat message', msg);
+});
 
 app.get('/', function(req, res){
     res.sendfile('index.html');
