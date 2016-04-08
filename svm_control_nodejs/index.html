@@ -1,10 +1,10 @@
 <!doctype html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>BCI Art</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
+      body { font: 13px Helvetica, Arial; padding: 0; margin: 0;}
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
       form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
@@ -14,13 +14,38 @@
     </style>
   </head>
   <body>
-    <ul id="messages"></ul>
-    <form action="">
-      <input id="m" autocomplete="off" /><button>Send</button>
-    </form>
+    <div id="p5container"></div>
+    <div id="debug">
+      <p>Debug</p>
+      <ul id="messages"></ul>
+      <form action="">
+        <input id="m" autocomplete="off" /><button>Send</button>
+      </form>
+    </div>
+    <script language="javascript" type="text/javascript" src="libraries/p5.js"></script>
+    <script language="javascript" type="text/javascript" src="sketches/sketch.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
+      // p5js
+      
+      function setup() {
+        noStroke();
+        var pcanvas = createCanvas(640, 480);
+        pcanvas.parent('p5container');
+        lcolor = color(255, 0, 0);
+        rcolor = color(0, 0, 255);
+      }
+
+      function draw() {
+        fill(lcolor);
+        rect(0, 0, width * 0.5, height);
+        fill(rcolor);
+        rect(width * 0.5, 0, width * 0.5, height);
+      }
+      
+      // socket.io
+      
       var socket = io();
       $('form').submit(function(){
         socket.emit('chat message', $('#m').val());
@@ -28,7 +53,13 @@
         return false;
       });
       socket.on('chat message', function(msg){
-        $('#messages').append($('<li>').text(msg));
+        $('#messages').prepend($('<li>').text(msg));
+        if(msg == "/bci_art/svm/start/1/received") {
+          lcolor = color(0);
+        }
+        if(msg == "/bci_art/svm/start/2/received") {
+          rcolor = color(0);
+        }
       });
     </script>
   </body>

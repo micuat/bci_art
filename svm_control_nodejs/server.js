@@ -1,4 +1,5 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
@@ -15,6 +16,7 @@ oscServer.on("message", function (msg, rinfo) {
 app.get('/', function(req, res){
     res.sendfile('index.html');
 });
+app.use('/libraries', express.static('libraries'));
 
 io.on('connection', function(socket){
     console.log('a user connected');
