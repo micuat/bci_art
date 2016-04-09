@@ -23,18 +23,23 @@
       </form>
     </div>
     <script language="javascript" type="text/javascript" src="libraries/p5.js"></script>
-    <script language="javascript" type="text/javascript" src="sketches/sketch.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
       // p5js
       
+      function reset() {
+        socket.emit('bci command', "/bci_art/svm/reset");
+        lcolor = color(255, 0, 0);
+        rcolor = color(0, 0, 255);
+      }
+      
       function setup() {
         noStroke();
         var pcanvas = createCanvas(640, 480);
+        frameRate(10);
         pcanvas.parent('p5container');
-        lcolor = color(255, 0, 0);
-        rcolor = color(0, 0, 255);
+        reset();
       }
 
       function draw() {
@@ -42,11 +47,18 @@
         rect(0, 0, width * 0.5, height);
         fill(rcolor);
         rect(width * 0.5, 0, width * 0.5, height);
+        fill(255, 128); // reset button
+        b = 50;
+        rect(width - b, height - b, b, b);
       }
       
       function mousePressed() {
-        if(mouseY > 0 && mouseY < height && mouseX > 0 && mouseX < width) {
-          if(mouseX < width * 0.5)
+        if(mouseY > 0 && mouseY < height && mouseX > 0 && mouseX < width) { // on canvas
+          b = 50;
+          if(mouseX > width - b && mouseY > height - b) { // reset button
+            reset();
+          }
+          else if(mouseX < width * 0.5)
             socket.emit('bci command', "/bci_art/svm/start/1");
           else
             socket.emit('bci command', "/bci_art/svm/start/2");

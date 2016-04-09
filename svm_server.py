@@ -27,10 +27,11 @@ def handle_timeout(self):
 import types
 server.handle_timeout = types.MethodType(handle_timeout, server)
 
+classifier_ready = False
+
 class Dataset:
     state = "none"
     maxSampleNum = 30
-    classifier_ready = False
     identifier = 0
 
     def __init__(self, id):
@@ -75,6 +76,12 @@ def control_record_callback(path, tags, args, source):
         client.send(m)
         datasets[1].startRecording()
 
+def reset_callback(path, tags, args, source):
+    datasets[0].initialize()
+    datasets[1].initialize()
+    global classifier_ready
+    classifier_ready = False
+
 def quit_callback(path, tags, args, source):
     # don't do this at home (or it'll quit blender)
     global run
@@ -117,9 +124,7 @@ def compute_feature_vector(eegdata, Fs):
     meanBeta = np.mean(PSD[ind_beta,:],axis=0)
     
     feature_vector = np.concatenate((meanDelta, meanTheta, meanAlpha, meanBeta),axis=0)
-    
     feature_vector = np.log10(feature_vector)   
-       
     return feature_vector
 
 def nextpow2(i):
@@ -147,6 +152,8 @@ def eeg_callback(path, tags, args, source):
         datasets[0].record(feat_vector)
         datasets[1].record(feat_vector)
         
+        global classifier_ready
+        
         if datasets[0].state == "done" and datasets[1].state == "done":
             global classifier
             classifier = svm.SVC()
@@ -154,16 +161,16 @@ def eeg_callback(path, tags, args, source):
             y = np.concatenate((np.zeros((datasets[0].feat_matrix.shape[0], 1)), np.ones((datasets[1].feat_matrix.shape[0], 1))))
             classifier.fit(X, y)
             
+            classifier_ready = True
+            
             m = OSCMessage("/bci_art/svm/score")
             m.append(classifier.score(X, y))
             client.send(m)
             
             datasets[0].initialize()
             datasets[1].initialize()
-            datasets[0].classifier_ready = True
-            datasets[1].classifier_ready = True
 
-        if datasets[0].classifier_ready:
+        if classifier_ready:
             prediction_result = classifier.predict(feat_vector)
             print prediction_result
             m = OSCMessage("/bci_art/svm/prediction")
@@ -180,6 +187,7 @@ def default_callback(path, tags, args, source):
 server.addMsgHandler( "/muse/eeg", eeg_callback )
 server.addMsgHandler( "/bci_art/svm/start/1", control_record_callback )
 server.addMsgHandler( "/bci_art/svm/start/2", control_record_callback )
+server.addMsgHandler( "/bci_art/svm/reset", reset_callback )
 server.addMsgHandler( "/bci_art/quit", quit_callback )
 server.addMsgHandler( "default", default_callback )
 
