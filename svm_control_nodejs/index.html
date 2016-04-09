@@ -28,10 +28,33 @@
     <script>
       // p5js
       
+      var lhemi, rhemi;
+      function Hemi(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.c = color(0);
+        this.draw = function() {
+          fill(this.c);
+          rect(this.x, this.y, this.w, this.h);
+        }
+        this.inside = function(x, y) {
+          if(this.x < x && x < this.x + this.w && this.y < y && y < this.y + this.h)
+            return true;
+          else
+            return false;
+        }
+      };
+
       function reset() {
         socket.emit('bci command', "/bci_art/svm/reset");
         lcolor = color(255, 0, 0);
         rcolor = color(0, 0, 255);
+        lhemi = new Hemi(0, 0, width * 0.5, height);
+        lhemi.c = color(255, 0, 0);
+        rhemi = new Hemi(width * 0.5, 0, width * 0.5, height);
+        rhemi.c = color(0, 0, 255);
       }
       
       function setup() {
@@ -43,10 +66,8 @@
       }
 
       function draw() {
-        fill(lcolor);
-        rect(0, 0, width * 0.5, height);
-        fill(rcolor);
-        rect(width * 0.5, 0, width * 0.5, height);
+        lhemi.draw();
+        rhemi.draw();
         fill(255, 128); // reset button
         b = 50;
         rect(width - b, height - b, b, b);
@@ -58,10 +79,12 @@
           if(mouseX > width - b && mouseY > height - b) { // reset button
             reset();
           }
-          else if(mouseX < width * 0.5)
-            socket.emit('bci command', "/bci_art/svm/start/1");
-          else
-            socket.emit('bci command', "/bci_art/svm/start/2");
+          else {
+            if(lhemi.inside(mouseX, mouseY))
+              socket.emit('bci command', "/bci_art/svm/start/1");
+            else if(rhemi.inside(mouseX, mouseY))
+              socket.emit('bci command', "/bci_art/svm/start/2");
+            }
         }
       }
       
@@ -76,10 +99,10 @@
       socket.on('bci command', function(msg){
         $('#messages').prepend($('<li>').text(msg));
         if(msg == "/bci_art/svm/done/1") {
-          lcolor = color(0);
+          lhemi.c = color(0);
         }
         if(msg == "/bci_art/svm/done/2") {
-          rcolor = color(0);
+          rhemi.c = color(0);
         }
       });
     </script>
