@@ -39,14 +39,20 @@ class Dataset:
         return
 
     def initialize(self):
+        m = OSCMessage("/bci_art/svm/progress/" + str(self.identifier))
+        m.append(0)
+        m.append(self.maxSampleNum)
+        client.send(m)
         self.state = "none"
 
     def startRecording(self):
-        if self.state == "none":
-            self.state = "recording_initial"
+        self.state = "recording_initial"
+    
+    def isRecording(self):
+        return self.state == "recording_initial" or self.state == "recording"
 
     def stopRecording(self):
-        if self.state == "recording_initial" or self.state == "recording":
+        if self.isRecording():
             self.state = "recorded"
 
     def record(self, sample):
@@ -72,22 +78,32 @@ class Dataset:
         
 def control_record_callback(path, tags, args, source):
     command = path.split("/")[4]
+    if classifier_ready:
+        reset()
+    
     if command == "1":
         print "1st sample set"
         m = OSCMessage("/bci_art/svm/start/1/received")
         client.send(m)
         datasets[0].startRecording()
+        if datasets[1].isRecording():
+            datasets[1].initialize()
     elif command == "2":
         print "2nd sample set"
         m = OSCMessage("/bci_art/svm/start/2/received")
         client.send(m)
         datasets[1].startRecording()
+        if datasets[0].isRecording():
+            datasets[0].initialize()
 
-def reset_callback(path, tags, args, source):
+def reset():
     datasets[0].initialize()
     datasets[1].initialize()
     global classifier_ready
     classifier_ready = False
+
+def reset_callback(path, tags, args, source):
+    reset()
 
 def quit_callback(path, tags, args, source):
     # don't do this at home (or it'll quit blender)
@@ -161,7 +177,7 @@ def eeg_callback(path, tags, args, source):
         
         global classifier_ready
         
-        if datasets[0].state == "done" and datasets[1].state == "done":
+        if classifier_ready == False and datasets[0].state == "done" and datasets[1].state == "done":
             global classifier
             classifier = svm.SVC()
             X = np.concatenate((datasets[0].feat_matrix, datasets[1].feat_matrix))
@@ -174,9 +190,6 @@ def eeg_callback(path, tags, args, source):
             m.append(classifier.score(X, y))
             client.send(m)
             
-            datasets[0].initialize()
-            datasets[1].initialize()
-
         if classifier_ready:
             prediction_result = classifier.predict(feat_vector)
             print prediction_result
