@@ -76,24 +76,31 @@
       
       function setup() {
         noStroke();
-        var pcanvas = createCanvas(640, 480);
+        var pcanvas = createCanvas(window.innerWidth, 480);
         frameRate(10);
         pcanvas.parent('p5container');
         reset();
       }
 
+      function windowResized() {
+        resizeCanvas(window.innerWidth, 480);
+        lhemi.w = width * 0.5;
+        rhemi.x = width * 0.5;
+        rhemi.w = width * 0.5;
+      }
+      
       function draw() {
         lhemi.draw();
         rhemi.draw();
         fill(0); // reset button
         b = 50;
-        rect(width - b, height - b, b, b);
+        rect(width - b, 0, b, b);
       }
       
       function mousePressed() {
         if(mouseY > 0 && mouseY < height && mouseX > 0 && mouseX < width) { // on canvas
           b = 50;
-          if(mouseX > width - b && mouseY > height - b) { // reset button
+          if(mouseX > width - b && mouseY < b) { // reset button
             reset();
           }
           else {
