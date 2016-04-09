@@ -1,12 +1,21 @@
-Muse-io
+BCI Art
+========
 
-    $ muse-io --device Muse-7042 --osc 'osc.udp://localhost:12000'
+Naoto Hieda (2016) micuat@gmail.com
 
-Python
+Instructions
+--------
+
+Launch Muse-io
+
+    $ muse-io --device Muse-XXXX --osc 'osc.udp://localhost:12000'
+
+Launch Python SVM server
 
     $ python2.7 svm_server.py
 
-Node.js
+Launch Node.js web server
 
     $ cd svm_control_nodejs
-    $ npm install node-osc socket.io connect serve-static
+    $ npm install --save node-osc socket.io express@4.10.2 serve-static
+    $ node server.js
