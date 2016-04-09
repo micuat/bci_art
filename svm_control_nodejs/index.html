@@ -35,9 +35,15 @@
         this.w = w;
         this.h = h;
         this.c = color(0);
+        this.p = 0;
+        this.update = function(p) {
+          this.p = p;
+        }
         this.draw = function() {
           fill(this.c);
           rect(this.x, this.y, this.w, this.h);
+          fill(255, 128);
+          rect(this.x, this.y + this.h * (1 - this.p), this.w, this.h + this.p);
         }
         this.inside = function(x, y) {
           if(this.x < x && x < this.x + this.w && this.y < y && y < this.y + this.h)
@@ -68,7 +74,7 @@
       function draw() {
         lhemi.draw();
         rhemi.draw();
-        fill(255, 128); // reset button
+        fill(255); // reset button
         b = 50;
         rect(width - b, height - b, b, b);
       }
@@ -99,10 +105,14 @@
       socket.on('bci command', function(msg){
         $('#messages').prepend($('<li>').text(msg));
         if(msg == "/bci_art/svm/done/1") {
-          lhemi.c = color(0);
         }
         if(msg == "/bci_art/svm/done/2") {
-          rhemi.c = color(0);
+        }
+        if(msg[0] == "/bci_art/svm/progress/1") {
+          lhemi.update(msg[1] / msg[2]);
+        }
+        if(msg[0] == "/bci_art/svm/progress/2") {
+          rhemi.update(msg[1] / msg[2]);
         }
       });
     </script>

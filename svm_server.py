@@ -51,18 +51,25 @@ class Dataset:
 
     def record(self, sample):
         if self.state == "recording_initial":
-            self.feat_matrix = [np.copy(sample)]
+            self.feat_matrix = np.array([sample])
             self.state = "recording"
         elif self.state == "recording":
             self.feat_matrix = np.concatenate((self.feat_matrix, [sample]), axis=0)
-            if self.feat_matrix.shape[0] >= self.maxSampleNum:
-                print "done"
-                print self.feat_matrix
-                m = OSCMessage("/bci_art/svm/done/" + str(self.identifier))
-                client.send(m)
+        else:
+            return
 
-                self.state = "done"
+        m = OSCMessage("/bci_art/svm/progress/" + str(self.identifier))
+        m.append(self.feat_matrix.shape[0])
+        m.append(self.maxSampleNum)
+        client.send(m)
 
+        if self.feat_matrix.shape[0] >= self.maxSampleNum:
+            print "done"
+            print self.feat_matrix
+            m = OSCMessage("/bci_art/svm/done/" + str(self.identifier))
+            client.send(m)
+            self.state = "done"
+        
 def control_record_callback(path, tags, args, source):
     command = path.split("/")[4]
     if command == "1":
