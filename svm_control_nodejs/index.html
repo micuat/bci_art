@@ -36,14 +36,25 @@
         this.h = h;
         this.c = color(0);
         this.p = 0;
-        this.update = function(p) {
+        this.bang = 5;
+        this.bangMax = 5;
+        this.predicted = function() {
+          this.bang = 0;
+        }
+        this.progress = function(p) {
           this.p = p;
         }
         this.draw = function() {
           fill(this.c);
           rect(this.x, this.y, this.w, this.h);
-          fill(255, 128);
+          if(this.bang < this.bangMax) {
+            fill(255, 128 * this.bang / this.bangMax);
+          }
+          else
+            fill(255, 128);
           rect(this.x, this.y + this.h * (1 - this.p), this.w, this.h + this.p);
+          
+          this.bang++;
         }
         this.inside = function(x, y) {
           if(this.x < x && x < this.x + this.w && this.y < y && y < this.y + this.h)
@@ -74,7 +85,7 @@
       function draw() {
         lhemi.draw();
         rhemi.draw();
-        fill(255); // reset button
+        fill(0); // reset button
         b = 50;
         rect(width - b, height - b, b, b);
       }
@@ -109,10 +120,16 @@
         if(msg == "/bci_art/svm/done/2") {
         }
         if(msg[0] == "/bci_art/svm/progress/1") {
-          lhemi.update(msg[1] / msg[2]);
+          lhemi.progress(msg[1] / msg[2]);
         }
         if(msg[0] == "/bci_art/svm/progress/2") {
-          rhemi.update(msg[1] / msg[2]);
+          rhemi.progress(msg[1] / msg[2]);
+        }
+        if(msg[0] == "/bci_art/svm/prediction") {
+          if(msg[1] == 0)
+            lhemi.predicted();
+          else
+            rhemi.predicted();
         }
       });
     </script>
