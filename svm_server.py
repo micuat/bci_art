@@ -50,7 +50,7 @@ class Dataset:
 
     def startRecording(self):
         self.state = "recording_initial"
-    
+
     def isRecording(self):
         return self.state == "recording_initial" or self.state == "recording"
 
@@ -68,7 +68,7 @@ class Dataset:
             return
 
         m = OSCMessage("/bci_art/svm/progress/" + str(self.identifier))
-        m.append(self.feat_matrix.shape[0])
+        m.append(int(self.feat_matrix.shape[0]))
         m.append(self.maxSampleNum)
         client.send(m)
 
@@ -78,12 +78,12 @@ class Dataset:
             m = OSCMessage("/bci_art/svm/done/" + str(self.identifier))
             client.send(m)
             self.state = "done"
-        
+
 def control_record_callback(path, tags, args, source):
     command = path.split("/")[4]
     if classifier_ready:
         reset()
-    
+
     if command == "1":
         print "1st sample set"
         m = OSCMessage("/bci_art/svm/start/1/received")
@@ -120,10 +120,10 @@ def compute_feature_vector(eegdata, Fs):
     # https://github.com/bcimontreal/bci_workshop/blob/master/bci_workshop_tools.py
     # print eegdata
     eegdata = np.array([eegdata]).T
-    
+
     # 1. Compute the PSD
     winSampleLength = len(eegdata)
-    
+
     # Apply Hamming window
     w = np.hamming(winSampleLength)
     dataWinCentered = eegdata - np.mean(eegdata, axis=0) # Remove offset
@@ -133,7 +133,7 @@ def compute_feature_vector(eegdata, Fs):
     Y = np.fft.fft(dataWinCenteredHam, n=NFFT, axis=0)/winSampleLength
     PSD = 2*np.abs(Y[0:NFFT/2,:])
     f = Fs/2*np.linspace(0,1,NFFT/2)
-    
+
     # SPECTRAL FEATURES
     # Average of band powers
     # Delta <4
@@ -143,23 +143,23 @@ def compute_feature_vector(eegdata, Fs):
     ind_theta, = np.where((f>=4) & (f<=8))
     meanTheta = np.mean(PSD[ind_theta,:],axis=0)
     # Alpha 8-12
-    ind_alpha, = np.where((f>=8) & (f<=12)) 
+    ind_alpha, = np.where((f>=8) & (f<=12))
     meanAlpha = np.mean(PSD[ind_alpha,:],axis=0)
     # Beta 12-30
     ind_beta, = np.where((f>=12) & (f<30))
     meanBeta = np.mean(PSD[ind_beta,:],axis=0)
-    
+
     feature_vector = np.concatenate((meanDelta, meanTheta, meanAlpha, meanBeta),axis=0)
-    feature_vector = np.log10(feature_vector)   
+    feature_vector = np.log10(feature_vector)
     return feature_vector
 
 def nextpow2(i):
-    """ 
+    """
     Find the next power of 2 for number i
-    
+
     """
     n = 1
-    while n < i: 
+    while n < i:
         n *= 2
     return n
 
@@ -171,35 +171,35 @@ def eeg_callback(path, tags, args, source):
         eegArray = [eeg]
     else:
         eegArray = np.concatenate((eegArray, [eeg]))
-    
+
     if len(eegArray) == 220:
         feat_vector = compute_feature_vector(eegArray, 220)
-        
+
         datasets[0].record(feat_vector)
         datasets[1].record(feat_vector)
-        
+
         global classifier_ready
-        
+
         if classifier_ready == False and datasets[0].state == "done" and datasets[1].state == "done":
             global classifier
             classifier = svm.SVC()
             X = np.concatenate((datasets[0].feat_matrix, datasets[1].feat_matrix))
             y = np.concatenate((np.zeros((datasets[0].feat_matrix.shape[0], 1)), np.ones((datasets[1].feat_matrix.shape[0], 1))))
             classifier.fit(X, y)
-            
+
             classifier_ready = True
-            
+
             m = OSCMessage("/bci_art/svm/score")
             m.append(classifier.score(X, y))
             client.send(m)
-            
+
         if classifier_ready:
             prediction_result = classifier.predict(feat_vector)
             print prediction_result
             m = OSCMessage("/bci_art/svm/prediction")
             m.append(prediction_result)
             client.send(m)
-        
+
         print feat_vector
         eegArray = eegArray[110:]
 
