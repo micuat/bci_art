@@ -7,13 +7,16 @@ from time import sleep
 import numpy as np
 from sklearn import svm
 
+port_muse = int(sys.argv[1])
+port_node = int(sys.argv[2])
+
 # muse-io server
-server = OSCServer( ("localhost", 12000) )
+server = OSCServer( ("localhost", port_muse) )
 server.timeout = 0
 
 # node.js
 client = OSCClient()
-client.connect( ("localhost", 13000) )
+client.connect( ("localhost", port_node) )
 
 run = True
 

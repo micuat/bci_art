@@ -1,11 +1,15 @@
+var port_python = process.argv[2];
+var port_receive = process.argv[3];
+var port_http = process.argv[4];
+
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 var osc = require('node-osc');
-var svm_python = new osc.Client('127.0.0.1', 12000);
-var oscServer = new osc.Server(13000, '127.0.0.1');
+var svm_python = new osc.Client('127.0.0.1', port_python);
+var oscServer = new osc.Server(port_receive, '127.0.0.1');
 
 oscServer.on("message", function (msg, rinfo) {
     console.log("message:");
@@ -30,6 +34,6 @@ io.on('connection', function(socket){
     }
 );});
 
-http.listen(3000, function(){
-    console.log('listening on *:3000');
+http.listen(port_http, function(){
+    console.log('listening on *:' + port_http);
 });
