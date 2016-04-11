@@ -18,7 +18,7 @@ oscServer.on("message", function (msg, rinfo) {
 });
 
 app.get('/', function(req, res){
-    res.sendfile('index.html');
+    res.sendFile(__dirname + '/index.html');
 });
 app.use('/libraries', express.static('libraries'));
 
