@@ -27,7 +27,7 @@
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
       // p5js
-      
+
       var lhemi, rhemi;
       function Hemi(x, y, w, h) {
         this.x = x;
@@ -53,7 +53,7 @@
           else
             fill(255, 128);
           rect(this.x, this.y + this.h * (1 - this.p), this.w, this.h + this.p);
-          
+
           this.bang++;
         }
         this.inside = function(x, y) {
@@ -66,14 +66,12 @@
 
       function reset() {
         socket.emit('bci command', "/bci_art/svm/reset");
-        lcolor = color(255, 0, 0);
-        rcolor = color(0, 0, 255);
         lhemi = new Hemi(0, 0, width * 0.5, height);
-        lhemi.c = color(255, 0, 0);
+        lhemi.c = color('#FF002D');
         rhemi = new Hemi(width * 0.5, 0, width * 0.5, height);
-        rhemi.c = color(0, 0, 255);
+        rhemi.c = color('#4520FF');
       }
-      
+
       function setup() {
         noStroke();
         var pcanvas = createCanvas(window.innerWidth, 480);
@@ -88,7 +86,7 @@
         rhemi.x = width * 0.5;
         rhemi.w = width * 0.5;
       }
-      
+
       function draw() {
         lhemi.draw();
         rhemi.draw();
@@ -96,7 +94,7 @@
         b = 50;
         rect(width - b, 0, b, b);
       }
-      
+
       function mousePressed() {
         if(mouseY > 0 && mouseY < height && mouseX > 0 && mouseX < width) { // on canvas
           b = 50;
@@ -111,9 +109,9 @@
             }
         }
       }
-      
+
       // socket.io
-      
+
       var socket = io();
       $('form').submit(function(){
         socket.emit('bci command', $('#m').val());
@@ -128,7 +126,7 @@
           if(count > 5)
             $( this ).remove();
         });
-        
+
         if(msg == "/bci_art/svm/done/1") {
         }
         if(msg == "/bci_art/svm/done/2") {
