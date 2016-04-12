@@ -28,6 +28,29 @@
     <script>
       // p5js
 
+      var gauge;
+      function Gauge() {
+        this.sMax = 0;
+        this.s = 0;
+        this.score = function(s) {
+          this.sMax = s;
+        }
+        this.draw = function() {
+          fill('#E005FF'); // reset button
+          b = 50;
+          rect(width * 0.5 - b * 0.5, 0, b, height);
+          if(this.s < this.sMax) {
+            this.s += 0.01;
+            if(this.s > this.sMax) this.s = this.sMax;
+          }
+          fill(0, 128);
+          rect(width * 0.5 - b * 0.5, 0, b, (1 - this.s) * height);
+          textAlign(CENTER);
+          textSize(20);
+          fill(255);
+          text(int(this.s * 100) + "%", width * 0.5, height - 50);
+        }
+      }
       var lhemi, rhemi;
       function Hemi(x, y, w, h) {
         this.x = x;
@@ -37,9 +60,14 @@
         this.c = color(0);
         this.p = 0;
         this.bang = 5;
-        this.bangMax = 5;
+        this.bangMax = 10;
         this.predicted = function() {
-          this.bang = 0;
+          this.bang += 1;
+          if(this.bang > this.bangMax) this.bang = this.bangMax;
+        }
+        this.unpredicted = function() {
+          this.bang -= 1;
+          if(this.bang < 0) this.bang = 0;
         }
         this.progress = function(p) {
           this.p = p;
@@ -53,8 +81,6 @@
           else
             fill(255, 128);
           rect(this.x, this.y + this.h * (1 - this.p), this.w, this.h + this.p);
-
-          this.bang++;
         }
         this.inside = function(x, y) {
           if(this.x < x && x < this.x + this.w && this.y < y && y < this.y + this.h)
@@ -70,6 +96,7 @@
         lhemi.c = color('#FF002D');
         rhemi = new Hemi(width * 0.5, 0, width * 0.5, height);
         rhemi.c = color('#4520FF');
+        gauge = new Gauge();
       }
 
       function setup() {
@@ -90,15 +117,13 @@
       function draw() {
         lhemi.draw();
         rhemi.draw();
-        fill(0); // reset button
-        b = 50;
-        rect(width - b, 0, b, b);
+        gauge.draw();
       }
 
       function mousePressed() {
         if(mouseY > 0 && mouseY < height && mouseX > 0 && mouseX < width) { // on canvas
           b = 50;
-          if(mouseX > width - b && mouseY < b) { // reset button
+          if(width * 0.5 - b * 0.5 < mouseX && mouseX < width * 0.5 + b * 0.5) { // reset button
             reset();
           }
           else {
@@ -137,11 +162,18 @@
         if(msg[0] == "/bci_art/svm/progress/2") {
           rhemi.progress(msg[1] / msg[2]);
         }
+        if(msg[0] == "/bci_art/svm/score") {
+          gauge.score(msg[1]);
+        }
         if(msg[0] == "/bci_art/svm/prediction") {
-          if(msg[1] == 0)
+          if(msg[1] == 0) {
             lhemi.predicted();
-          else
+            rhemi.unpredicted();
+          }
+          else {
+            lhemi.unpredicted();
             rhemi.predicted();
+          }
         }
       });
     </script>
