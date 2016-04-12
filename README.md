@@ -19,3 +19,9 @@ Launch Node.js web server
     $ cd svm_control_nodejs
     $ npm install --save node-osc socket.io express@4.10.2 serve-static
     $ node server.js 12000 13000 3000
+
+
+Bash Script
+--------
+
+    $ ./run.sh XXXX 12000 13000 3000
