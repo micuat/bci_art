@@ -4,7 +4,7 @@
     <title>BCI Art</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; padding: 0; margin: 0;}
+      body { font: 13px Monaco, 'Courier New', Helvetica, Arial; padding: 0; margin: 0;}
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
       form button { width: 9%; background: rgb(255, 255, 255); border: none; padding: 10px; }
@@ -46,9 +46,10 @@
           fill(0, 128);
           rect(width * 0.5 - b * 0.5, 0, b, (1 - this.s) * height);
           textAlign(CENTER);
-          textSize(20);
+          textFont("Monaco, Courier New, Courier");
+          textSize(16);
           fill(255);
-          text(int(this.s * 100) + "%", width * 0.5, height - 50);
+          text(int(this.s * 100) + " %", width * 0.5, height - 50);
         }
       }
       var lhemi, rhemi;
@@ -75,11 +76,11 @@
         this.draw = function() {
           fill(this.c);
           rect(this.x, this.y, this.w, this.h);
-          if(this.bang < this.bangMax) {
-            fill(255, 128 * this.bang / this.bangMax);
-          }
-          else
-            fill(255, 128);
+          //if(this.bang < this.bangMax) {
+            fill(255, 200 * this.bang / this.bangMax);
+          //}
+          //else
+          //  fill(255, 128);
           rect(this.x, this.y + this.h * (1 - this.p), this.w, this.h + this.p);
         }
         this.inside = function(x, y) {
@@ -93,9 +94,9 @@
       function reset() {
         socket.emit('bci command', "/bci_art/svm/reset");
         lhemi = new Hemi(0, 0, width * 0.5, height);
-        lhemi.c = color('#FF002D');
+        lhemi.c = color('#D20014');
         rhemi = new Hemi(width * 0.5, 0, width * 0.5, height);
-        rhemi.c = color('#4520FF');
+        rhemi.c = color('#190096');
         gauge = new Gauge();
       }
 
