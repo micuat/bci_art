@@ -20,6 +20,9 @@ oscServer.on("message", function (msg, rinfo) {
 app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
 });
+app.get('/jquery-1.11.1.js', function(req, res){
+    res.sendFile(__dirname + '/jquery-1.11.1.js');
+});
 app.use('/libraries', express.static('libraries'));
 
 io.on('connection', function(socket){
