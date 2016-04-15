@@ -57,6 +57,7 @@ def plot_tsne():
     tsneResult = tsne.tsne(feat_matrix, 2, 50, 20.0);
     print tsneResult
 
+    np.save('t0.npy', feat_matrix)
     np.save('tsneResult.npy', tsneResult)
     #np.save('%stsneResult.npy' % timestamp, tsneResult)
 
@@ -81,7 +82,7 @@ def on_feature_vector(feat_vector):
         else:
             feat_matrix = np.concatenate((feat_matrix, [feat_vector]))
         
-        if feat_matrix.shape[0] == 10:
+        if feat_matrix.shape[0] == 60:
             plot_tsne()
             tsne_ready = True
     else:
@@ -121,7 +122,7 @@ def on_feature_vector(feat_vector):
         m.append(interpolated[0])
         m.append(interpolated[1])
         m.append(closestIndex0)
-        #client.send(m)
+        client.send(m)
 
 
 
