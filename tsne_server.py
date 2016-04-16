@@ -7,6 +7,7 @@ from time import sleep
 import numpy as np
 from sklearn import svm
 import matplotlib.pyplot as plt
+import time
 import tsne
 import musepy
 
@@ -57,9 +58,11 @@ def plot_tsne():
     tsneResult = tsne.tsne(feat_matrix, 2, 50, 20.0);
     print tsneResult
 
+    timestamp = timestr = time.strftime("%Y%m%d-%H%M%S")
     np.save('t0.npy', feat_matrix)
+    np.save('%st0.npy' % timestamp, feat_matrix)
     np.save('tsneResult.npy', tsneResult)
-    #np.save('%stsneResult.npy' % timestamp, tsneResult)
+    np.save('%stsneResult.npy' % timestamp, tsneResult)
 
     n0 = np.size(feat_matrix, 0);
     n0 = tsneResult.shape[0] / 3
