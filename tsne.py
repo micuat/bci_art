@@ -41,10 +41,10 @@ def x2p(X = np.array([]), tol = 1e-5, perplexity = 30.0):
         # Evaluate whether the perplexity is within tolerance
         Hdiff = H - logU;
         tries = 0;
-        while (np.abs(Hdiff) > tol).all() and tries < 50:
+        while (np.abs(Hdiff) > tol).any() and tries < 50:
 
             # If not, increase or decrease precision
-            if (Hdiff > 0).all():
+            if (Hdiff > 0).any():
                 betamin = beta[i].copy();
                 if betamax == np.inf or betamax == -np.inf:
                     beta[i] = beta[i] * 2;

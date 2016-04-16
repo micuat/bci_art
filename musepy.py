@@ -73,4 +73,4 @@ class Musepy:
         if len(self.eegArray) == 220:
             feat_vector = self.compute_feature_vector(self.eegArray, 220)
             self.func_feature_vector(feat_vector)
-            self.eegArray = self.eegArray[110:]
+            self.eegArray = self.eegArray[220/4:]

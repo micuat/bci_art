@@ -82,7 +82,10 @@ def on_feature_vector(feat_vector):
         else:
             feat_matrix = np.concatenate((feat_matrix, [feat_vector]))
         
-        if feat_matrix.shape[0] == 60:
+        if feat_matrix.shape[0] % 10 == 0:
+            print feat_matrix.shape[0]
+        
+        if feat_matrix.shape[0] == 120:
             plot_tsne()
             tsne_ready = True
     else:
@@ -136,7 +139,7 @@ def each_frame():
         server.handle_request()
 
 while run:
-    sleep(0.1)
+    sleep(0.01)
     each_frame()
 
 server.close()
