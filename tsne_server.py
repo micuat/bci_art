@@ -1,7 +1,7 @@
 # Muse command
 # muse-io --device Muse-7042 --osc 'osc.udp://localhost:12000'
 
-from OSC import OSCServer, OSCClient, OSCMessage
+from OSC import OSCServer, OSCClient, OSCMessage, OSCClientError
 import sys
 from time import sleep
 import numpy as np
@@ -128,8 +128,10 @@ def on_feature_vector(feat_vector):
         m.append(interpolated[0])
         m.append(interpolated[1])
         m.append(closestIndex0)
-        client.send(m)
-
+        try:
+            client.send(m)
+        except OSCClientError:
+            print "caught osc error"
 
 
 mp.set_on_feature_vector(on_feature_vector)
