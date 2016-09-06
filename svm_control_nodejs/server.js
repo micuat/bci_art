@@ -24,6 +24,7 @@ app.get('/jquery-1.11.1.js', function(req, res){
     res.sendFile(__dirname + '/jquery-1.11.1.js');
 });
 app.use('/libraries', express.static('libraries'));
+app.use('/assets', express.static('assets'));
 
 io.on('connection', function(socket){
     console.log('a user connected');
