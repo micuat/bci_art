@@ -5,10 +5,9 @@ from OSC import OSCServer, OSCClient, OSCMessage, OSCClientError
 import sys
 from time import sleep
 import numpy as np
-from sklearn import svm
+from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import time
-import tsne
 import musepy
 
 port_muse = int(sys.argv[1])
@@ -46,6 +45,11 @@ def default_callback(path, tags, args, source):
     # do nothing
     return
 
+def normalize(p):
+    max = np.amax(p)
+    min = np.amin(p)
+    return (p - min) / (max - min)
+
 server.addMsgHandler( "/bci_art/quit", quit_callback )
 server.addMsgHandler( "default", default_callback )
 
@@ -55,7 +59,10 @@ def plot_tsne():
     print feat_matrix
     print feat_matrix.shape
     global tsneResult
-    tsneResult = tsne.tsne(feat_matrix, 2, 50, 20.0);
+    model = TSNE(n_components=2, random_state=0, learning_rate=100)
+    tsneResult = model.fit_transform(feat_matrix)
+    tsneResult[:,0] = normalize(tsneResult[:,0])
+    tsneResult[:,1] = normalize(tsneResult[:,1])
     print tsneResult
 
     timestamp = timestr = time.strftime("%Y%m%d-%H%M%S")
