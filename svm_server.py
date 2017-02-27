@@ -1,5 +1,5 @@
 # Muse command
-# muse-io --device Muse-7042 --osc 'osc.udp://localhost:12000'
+# muse-io --device Muse-70]2 --osc 'osc.udp://localhost:12000'
 
 from OSC import OSCServer, OSCClient, OSCMessage, OSCClientError
 import sys
@@ -8,8 +8,12 @@ import numpy as np
 from sklearn import svm
 import musepy
 
+N = 3
+
 port_muse = int(sys.argv[1])
 port_node = int(sys.argv[2])
+port_of = int(sys.argv[3])
+
 
 # muse-io server
 server = OSCServer( ("localhost", port_muse) )
@@ -22,7 +26,7 @@ mp = musepy.Musepy(server)
 client = OSCClient()
 client.connect( ("localhost", port_node) )
 clientof = OSCClient()
-clientof.connect( ("localhost", 14000) )
+clientof.connect( ("localhost", port_of) )
 
 run = True
 
@@ -90,24 +94,16 @@ def control_record_callback(path, tags, args, source):
     if classifier_ready:
         reset()
 
-    if command == "1":
-        print "1st sample set"
-        m = OSCMessage("/bci_art/svm/start/1/received")
-        client.send(m)
-        datasets[0].startRecording()
-        if datasets[1].isRecording():
-            datasets[1].initialize()
-    elif command == "2":
-        print "2nd sample set"
-        m = OSCMessage("/bci_art/svm/start/2/received")
-        client.send(m)
-        datasets[1].startRecording()
-        if datasets[0].isRecording():
-            datasets[0].initialize()
+    m = OSCMessage("/bci_art/svm/start/" + command + "/received")
+    client.send(m)
+    datasets[int(command)].startRecording()
+    for i in range(0, N):
+        if i != int(command) and datasets[i].isRecording():
+            datasets[i].initialize()
 
 def reset():
-    datasets[0].initialize()
-    datasets[1].initialize()
+    for i in range(0, N):
+        datasets[i].initialize()
     global classifier_ready
     classifier_ready = False
 
@@ -115,40 +111,55 @@ def reset_callback(path, tags, args, source):
     reset()
 
 def quit_callback(path, tags, args, source):
-    # don't do this at home (or it'll quit blender)
+    # don't do this at home (or it'll quit)
     global run
     run = False
 
-datasets = [Dataset(1), Dataset(2)]
+datasets = [Dataset(0)]
+for i in range(1, N):
+    datasets.append(Dataset(i))
+
 
 def default_callback(path, tags, args, source):
     # do nothing
     return
 
-server.addMsgHandler( "/bci_art/svm/start/1", control_record_callback )
-server.addMsgHandler( "/bci_art/svm/start/2", control_record_callback )
+for i in range(0, N):
+  server.addMsgHandler( "/bci_art/svm/start/" + str(i), control_record_callback )
 server.addMsgHandler( "/bci_art/svm/reset", reset_callback )
 server.addMsgHandler( "/bci_art/quit", quit_callback )
 server.addMsgHandler( "default", default_callback )
 
 def on_feature_vector(feat_vector):
     print feat_vector
-    datasets[0].record(feat_vector)
-    datasets[1].record(feat_vector)
+    for i in range(0, N):
+        datasets[i].record(feat_vector)
 
     global classifier_ready
+    dataset_ready = True
+    for i in range(0, N):
+        if datasets[i].state != "done":
+            dataset_ready = False
 
-    if classifier_ready == False and datasets[0].state == "done" and datasets[1].state == "done":
+    if classifier_ready == False and dataset_ready:
         global classifier
         classifier = svm.SVC()
-        X = np.concatenate((datasets[0].feat_matrix, datasets[1].feat_matrix))
-        y = np.concatenate((np.zeros((datasets[0].feat_matrix.shape[0], 1)), np.ones((datasets[1].feat_matrix.shape[0], 1))))
+
+        X = datasets[0].feat_matrix
+        for i in range(1, N):
+            X = np.concatenate((X, datasets[i].feat_matrix))
+    
+        y = np.zeros((datasets[0].feat_matrix.shape[0], 1))
+        for i in range(1, N):
+            y = np.concatenate((y, i * np.ones((datasets[i].feat_matrix.shape[0], 1))))
         classifier.fit(X, y)
 
         classifier_ready = True
 
+        print "prep m"
         m = OSCMessage("/bci_art/svm/score")
         m.append(classifier.score(X, y))
+        print "send"
         client.send(m)
 
     if classifier_ready:
