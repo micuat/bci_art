@@ -1,57 +1,36 @@
 # Muse command
 # muse-io --device Muse-7042 --osc 'osc.udp://localhost:12000'
 
-from OSC import OSCServer, OSCClient, OSCMessage, OSCClientError
+from pythonosc import osc_message_builder, udp_client
 import sys
 from time import sleep
 import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import time
-import musepy
+# # import musepy
+import mwmpy
 
 port_muse = int(sys.argv[1])
 port_node = int(sys.argv[2])
 
+count = 0
 # muse-io server
-server = OSCServer( ("localhost", port_muse) )
-server.timeout = 0
+# server = OSCServer( ("localhost", port_muse) )
+# server.timeout = 0
 
 # musepy
-mp = musepy.Musepy(server)
+mp = mwmpy.Mwmpy() #musepy.Musepy(server)
 
 # openFrameworks
-client = OSCClient()
-client.connect( ("localhost", port_node) )
+client = udp_client.SimpleUDPClient("127.0.0.1", port_node)
 
 run = True
-
-# this method of reporting timeouts only works by convention
-# that before calling handle_request() field .timed_out is
-# set to False
-def handle_timeout(self):
-    self.timed_out = True
-
-# funny python's way to add a method to an instance of a class
-import types
-server.handle_timeout = types.MethodType(handle_timeout, server)
-
-def quit_callback(path, tags, args, source):
-    # don't do this at home (or it'll quit blender)
-    global run
-    run = False
-
-def default_callback(path, tags, args, source):
-    # do nothing
-    return
 
 def normalize(p):
     max = np.amax(p)
     min = np.amin(p)
     return (p - min) / (max - min)
-
-server.addMsgHandler( "/bci_art/quit", quit_callback )
-server.addMsgHandler( "default", default_callback )
 
 feat_matrix = []
 
@@ -145,10 +124,15 @@ mp.set_on_feature_vector(on_feature_vector)
 
 def each_frame():
     # clear timed_out flag
-    server.timed_out = False
+    # server.timed_out = False
     # handle all pending requests then return
-    while not server.timed_out:
-        server.handle_request()
+    # while not server.timed_out:
+    #     server.handle_request()
+    global count
+    count += 1
+    #print(count)
+    if count > 10000:
+        exit()
 
 while run:
     sleep(0.01)
