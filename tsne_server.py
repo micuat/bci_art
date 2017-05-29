@@ -6,7 +6,6 @@ import sys
 from time import sleep
 import numpy as np
 from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
 import time
 # # import musepy
 import mwmpy
@@ -14,7 +13,6 @@ import mwmpy
 port_muse = int(sys.argv[1])
 port_node = int(sys.argv[2])
 
-count = 0
 # muse-io server
 # server = OSCServer( ("localhost", port_muse) )
 # server.timeout = 0
@@ -50,19 +48,11 @@ def plot_tsne():
     np.save('tsneResult.npy', tsneResult)
     np.save('%stsneResult.npy' % timestamp, tsneResult)
 
-    n0 = np.size(feat_matrix, 0);
-    n0 = tsneResult.shape[0] / 3
-    n1 = n0 * 2
-    plt.plot(tsneResult[0:n0 - 1,0], tsneResult[0:n0 - 1,1], 'yo')
-    plt.plot(tsneResult[n0:n1 - 1,0], tsneResult[n0:n1 - 1,1], 'ro')
-    plt.plot(tsneResult[n1:,0], tsneResult[n1:,1], 'bo')
-    plt.show()
-
 tsne_ready = False
 
 def on_feature_vector(feat_vector):
     print(feat_vector)
-    
+
     global tsne_ready
     global feat_matrix
     if tsne_ready == False:
@@ -70,11 +60,11 @@ def on_feature_vector(feat_vector):
             feat_matrix = np.matrix(feat_vector)
         else:
             feat_matrix = np.concatenate((feat_matrix, [feat_vector]))
-        
+
         if feat_matrix.shape[0] % 10 == 0:
             print(feat_matrix.shape[0])
-        
-        if feat_matrix.shape[0] == 120:
+
+        if feat_matrix.shape[0] == 240:
             plot_tsne()
             tsne_ready = True
     else:
@@ -110,29 +100,22 @@ def on_feature_vector(feat_vector):
         interpolated = (tsneResult[closestIndex0, :] * (closestDistance1 + closestDistance2) + tsneResult[closestIndex1, :] * (closestDistance1 + closestDistance0) + tsneResult[closestIndex2, :] * (closestDistance0 + closestDistance1)) / closestDistanceTotal * 0.5
         print(interpolated)
 
-        m = OSCMessage("/muse/tsne")
-        m.append(interpolated[0])
-        m.append(interpolated[1])
-        m.append(closestIndex0)
-        try:
-            client.send(m)
-        except OSCClientError:
-            print("caught osc error")
+        client.send_message("/muse/tsne", (interpolated[0], interpolated[1], closestIndex0))
+
+        # m = OSCMessage("/muse/tsne")
+        # m.append(interpolated[0])
+        # m.append(interpolated[1])
+        # m.append(closestIndex0)
+        # try:
+        #     client.send(m)
+        # except OSCClientError:
+        #     print("caught osc error")
 
 
 mp.set_on_feature_vector(on_feature_vector)
 
 def each_frame():
-    # clear timed_out flag
-    # server.timed_out = False
-    # handle all pending requests then return
-    # while not server.timed_out:
-    #     server.handle_request()
-    global count
-    count += 1
-    #print(count)
-    if count > 10000:
-        exit()
+    pass
 
 while run:
     sleep(0.01)

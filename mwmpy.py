@@ -56,8 +56,8 @@ class Mwmpy:
                 pass
             
             if len(recorder.raw)>=512*5:
-                feature_vector = self.compute_feature_vector(recorder.raw[-512*5:], 512)
-                print(feature_vector)
+                feat_vector = self.compute_feature_vector(recorder.raw[-512*1:], 512)
+                self.func_feature_vector(feat_vector)
             time.sleep(0.1)
 
     def __init__(self):
@@ -114,16 +114,3 @@ class Mwmpy:
         while n < i:
             n *= 2
         return n
-
-    def eeg_callback(self, path, tags, args, source):
-        eeg = args[1]
-        # print eeg
-        if self.eegArray == []:
-            self.eegArray = [eeg]
-        else:
-            self.eegArray = np.concatenate((self.eegArray, [eeg]))
-
-        if len(self.eegArray) == 220:
-            feat_vector = self.compute_feature_vector(self.eegArray, 220)
-            self.func_feature_vector(feat_vector)
-            self.eegArray = self.eegArray[220/4:]
