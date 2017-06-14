@@ -8,8 +8,7 @@ Instructions
 
 Install pip dependencies
 
-    $ sudo pip install scikit-learn
-    $ sudo pip install pyOSC --pre
+    $ sudo pip install scikit-learn python-osc
 
 Launch Muse-io
 
