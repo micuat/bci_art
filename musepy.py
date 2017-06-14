@@ -72,7 +72,8 @@ class Musepy:
         else:
             self.eegArray = np.concatenate((self.eegArray, [eeg]))
 
-        if len(self.eegArray) == 220:
+        if len(self.eegArray) >= 220:
+            self.eegArray = self.eegArray[0:220-1]
             feat_vector = self.compute_feature_vector(self.eegArray, 220)
             self.func_feature_vector(feat_vector)
             self.eegArray = self.eegArray[220/4:]
