@@ -1,44 +1,26 @@
 # Muse command
 # muse-io --device Muse-70]2 --osc 'osc.udp://localhost:12000'
 
-from OSC import OSCServer, OSCClient, OSCMessage, OSCClientError
 import sys
+import threading
 from time import sleep
 import numpy as np
 from sklearn import svm
 import musepy
+from pythonosc import udp_client
+from pythonosc import dispatcher
+from pythonosc import osc_server
 
 N = 3
 
 port_muse = int(sys.argv[1])
-port_node = int(sys.argv[2])
-port_of = int(sys.argv[3])
-
-
-# muse-io server
-server = OSCServer( ("localhost", port_muse) )
-server.timeout = 0
-
-# musepy
-mp = musepy.Musepy(server)
+port_node_listen = int(sys.argv[2])
+port_node_send = int(sys.argv[3])
+port_of = int(sys.argv[4])
 
 # node.js
-client = OSCClient()
-client.connect( ("localhost", port_node) )
-clientof = OSCClient()
-clientof.connect( ("localhost", port_of) )
-
-run = True
-
-# this method of reporting timeouts only works by convention
-# that before calling handle_request() field .timed_out is
-# set to False
-def handle_timeout(self):
-    self.timed_out = True
-
-# funny python's way to add a method to an instance of a class
-import types
-server.handle_timeout = types.MethodType(handle_timeout, server)
+client = udp_client.SimpleUDPClient("localhost", port_node_send)
+clientof = udp_client.SimpleUDPClient("localhost", port_of)
 
 classifier_ready = False
 
@@ -52,10 +34,7 @@ class Dataset:
         return
 
     def initialize(self):
-        m = OSCMessage("/bci_art/svm/progress/" + str(self.identifier))
-        m.append(0)
-        m.append(self.maxSampleNum)
-        client.send(m)
+        client.send_message("/bci_art/svm/progress/" + str(self.identifier), (0, self.maxSampleNum))
         self.state = "none"
 
     def startRecording(self):
@@ -77,25 +56,22 @@ class Dataset:
         else:
             return
 
-        m = OSCMessage("/bci_art/svm/progress/" + str(self.identifier))
-        m.append(int(self.feat_matrix.shape[0]))
-        m.append(self.maxSampleNum)
-        client.send(m)
+        client.send_message("/bci_art/svm/progress/" + str(self.identifier),
+            (int(self.feat_matrix.shape[0]), self.maxSampleNum))
 
         if self.feat_matrix.shape[0] >= self.maxSampleNum:
             print("done")
             print(self.feat_matrix)
-            m = OSCMessage("/bci_art/svm/done/" + str(self.identifier))
-            client.send(m)
+            client.send_message("/bci_art/svm/done/" + str(self.identifier), ())
             self.state = "done"
 
-def control_record_callback(path, tags, args, source):
+def control_record_callback(path, *args):
+    print(args)
     command = path.split("/")[4]
     if classifier_ready:
         reset()
 
-    m = OSCMessage("/bci_art/svm/start/" + command + "/received")
-    client.send(m)
+    client.send_message("/bci_art/svm/start/" + command + "/received", ())
     datasets[int(command)].startRecording()
     for i in range(0, N):
         if i != int(command) and datasets[i].isRecording():
@@ -107,28 +83,21 @@ def reset():
     global classifier_ready
     classifier_ready = False
 
-def reset_callback(path, tags, args, source):
+def reset_callback(path, *args):
     reset()
-
-def quit_callback(path, tags, args, source):
-    # don't do this at home (or it'll quit)
-    global run
-    run = False
 
 datasets = [Dataset(0)]
 for i in range(1, N):
     datasets.append(Dataset(i))
 
-
-def default_callback(path, tags, args, source):
-    # do nothing
-    return
+dispatch = dispatcher.Dispatcher()
 
 for i in range(0, N):
-  server.addMsgHandler( "/bci_art/svm/start/" + str(i), control_record_callback )
-server.addMsgHandler( "/bci_art/svm/reset", reset_callback )
-server.addMsgHandler( "/bci_art/quit", quit_callback )
-server.addMsgHandler( "default", default_callback )
+    dispatch.map("/bci_art/svm/start/" + str(i), control_record_callback)
+dispatch.map("/bci_art/svm/reset", reset_callback)
+server = osc_server.ThreadingOSCUDPServer(("127.0.0.1", port_node_listen), dispatch)
+server_thread = threading.Thread(target=server.serve_forever)
+server_thread.start()
 
 def on_feature_vector(feat_vector):
     print(feat_vector)
@@ -157,33 +126,19 @@ def on_feature_vector(feat_vector):
         classifier_ready = True
 
         print("prep m")
-        m = OSCMessage("/bci_art/svm/score")
-        m.append(classifier.score(X, y))
         print("send")
-        client.send(m)
+        client.send_message("/bci_art/svm/score", classifier.score(X, y))
 
     if classifier_ready:
         prediction_result = classifier.predict(feat_vector)
         print(prediction_result)
-        m = OSCMessage("/bci_art/svm/prediction")
-        m.append(prediction_result)
-        client.send(m)
+        client.send_message("/bci_art/svm/prediction", prediction_result)
         try:
-            clientof.send(m)
+            clientof.send_message("/bci_art/svm/prediction", prediction_result)
         except OSCClientError:
             print("caught osc error")
 
+# musepy
+mp = musepy.Musepy(port_muse)
 mp.set_on_feature_vector(on_feature_vector)
-
-def each_frame():
-    # clear timed_out flag
-    server.timed_out = False
-    # handle all pending requests then return
-    while not server.timed_out:
-        server.handle_request()
-
-while run:
-    sleep(0.1)
-    each_frame()
-
-server.close()
+mp.start()
