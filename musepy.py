@@ -9,15 +9,17 @@ class Musepy:
     def __init__(self, port):
         dispatch = dispatcher.Dispatcher()
         dispatch.map("/muse/eeg", self.eeg_callback)
-        server = osc_server.ThreadingOSCUDPServer(("127.0.0.1", port), dispatch)
-        server_thread = threading.Thread(target=server.serve_forever)
-        server_thread.start()
+        self.server = osc_server.ThreadingOSCUDPServer(("127.0.0.1", port), dispatch)
+        self.server_thread = threading.Thread(target=self.server.serve_forever)
+
+    def start(self):
+        self.server_thread.start()
 
     def set_on_feature_vector(self, func):
         self.func_feature_vector = func
-    
+
     def exit(self):
-        server.shutdown()
+        self.server.shutdown()
     
     def compute_feature_vector(self, eegdata, Fs):
         # https://github.com/bcimontreal/bci_workshop/blob/master/bci_workshop_tools.py

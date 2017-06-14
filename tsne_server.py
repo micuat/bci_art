@@ -14,6 +14,7 @@ port_node = int(sys.argv[2])
 
 # musepy
 mp = musepy.Musepy(port_muse)
+mp.start()
 
 # openFrameworks
 client = udp_client.SimpleUDPClient("127.0.0.1", port_node)
