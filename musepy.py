@@ -1,23 +1,26 @@
-
-# requires pyOSC
-# pip install pyosc --pre
-from OSC import OSCServer, OSCClient, OSCMessage
+import threading
 import numpy as np
-from sklearn import svm
+from pythonosc import dispatcher
+from pythonosc import osc_server
 
 class Musepy:
     eegArray = []
 
-    def __init__(self, server):
-        self.server = server
-        server.addMsgHandler( "/muse/eeg", self.eeg_callback )
-    
+    def __init__(self, port):
+        dispatch = dispatcher.Dispatcher()
+        dispatch.map("/muse/eeg", self.eeg_callback)
+        server = osc_server.ThreadingOSCUDPServer(("127.0.0.1", port), dispatch)
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
+
     def set_on_feature_vector(self, func):
         self.func_feature_vector = func
     
+    def exit(self):
+        server.shutdown()
+    
     def compute_feature_vector(self, eegdata, Fs):
         # https://github.com/bcimontreal/bci_workshop/blob/master/bci_workshop_tools.py
-        # print eegdata
         eegdata = np.array([eegdata]).T
 
         # 1. Compute the PSD
@@ -62,9 +65,8 @@ class Musepy:
             n *= 2
         return n
 
-    def eeg_callback(self, path, tags, args, source):
+    def eeg_callback(self, path, *args):
         eeg = args[1]
-        # print eeg
         if self.eegArray == []:
             self.eegArray = [eeg]
         else:

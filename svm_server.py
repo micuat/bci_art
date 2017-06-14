@@ -83,8 +83,8 @@ class Dataset:
         client.send(m)
 
         if self.feat_matrix.shape[0] >= self.maxSampleNum:
-            print "done"
-            print self.feat_matrix
+            print("done")
+            print(self.feat_matrix)
             m = OSCMessage("/bci_art/svm/done/" + str(self.identifier))
             client.send(m)
             self.state = "done"
@@ -131,7 +131,7 @@ server.addMsgHandler( "/bci_art/quit", quit_callback )
 server.addMsgHandler( "default", default_callback )
 
 def on_feature_vector(feat_vector):
-    print feat_vector
+    print(feat_vector)
     for i in range(0, N):
         datasets[i].record(feat_vector)
 
@@ -156,22 +156,22 @@ def on_feature_vector(feat_vector):
 
         classifier_ready = True
 
-        print "prep m"
+        print("prep m")
         m = OSCMessage("/bci_art/svm/score")
         m.append(classifier.score(X, y))
-        print "send"
+        print("send")
         client.send(m)
 
     if classifier_ready:
         prediction_result = classifier.predict(feat_vector)
-        print prediction_result
+        print(prediction_result)
         m = OSCMessage("/bci_art/svm/prediction")
         m.append(prediction_result)
         client.send(m)
         try:
             clientof.send(m)
         except OSCClientError:
-            print "caught osc error"
+            print("caught osc error")
 
 mp.set_on_feature_vector(on_feature_vector)
 
