@@ -17,16 +17,16 @@ Launch Muse-io
 
 Launch Python SVM server
 
-    $ python2.7 svm_server.py 12000 13000 14000
+    $ python -u svm_server.py 12000 12100 13000 14000
 
 Launch Node.js web server
 
     $ cd svm_control_nodejs
-    $ npm install --save node-osc socket.io express@4.10.2 serve-static
-    $ node server.js 12000 13000 14000 3000
+    $ npm install --save node-osc socket.io express serve-static
+    $ node server.js 12100 13000 14000 3000
 
 
 Bash Script
 --------
 
-    $ ./run.sh XXXX 12000 13000 14000 3000
+    $ ./run.sh XXXX 12000 12100 13000 14000 3000
