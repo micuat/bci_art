@@ -6,6 +6,10 @@ Naoto Hieda (2016) micuat@gmail.com
 Instructions
 --------
 
+Install pip dependencies
+
+    $ sudo pip install scikit-learn python-osc
+
 Launch Muse-io
 
     $ muse-io --device Muse-XXXX --osc 'osc.udp://localhost:12000'
