@@ -1,6 +1,6 @@
 // p5js
 
-var N = 3;
+var N = 2;
 
 var gauge;
 function Gauge() {
