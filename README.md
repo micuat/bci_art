@@ -1,7 +1,9 @@
 BCI Art
 ========
 
-Naoto Hieda (2016) micuat@gmail.com
+Naoto Hieda (2016-2017) micuat@gmail.com
+
+The current repository supports Python 3. For Python2.7, please checkout [eda1d498](https://github.com/micuat/bci_art/tree/eda1d4982ea2b48533537793c426c5bede3df207).
 
 Instructions
 --------
