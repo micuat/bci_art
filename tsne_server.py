@@ -73,6 +73,7 @@ def on_feature_vector(feat_vector):
             plot_tsne()
             tsne_running = False
             tsne_ready = True
+            client.send_message("/muse/tsne/done", [])
     else:
         closestDistance0 = 10000000000.0
         closestDistance1 = 10000000000.0
