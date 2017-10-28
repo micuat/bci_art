@@ -12,6 +12,8 @@ import musepy
 port_muse = int(sys.argv[1])
 port_node = int(sys.argv[2])
 
+num_samples = 120
+
 # musepy
 mp = musepy.Musepy(port_muse)
 mp.start()
@@ -44,14 +46,20 @@ def plot_tsne():
     np.save('tsneResult.npy', tsneResult)
     np.save('%stsneResult.npy' % timestamp, tsneResult)
 
+tsne_running = False
 tsne_ready = False
 
 def on_feature_vector(feat_vector):
     print(feat_vector)
     
+    global tsne_running
     global tsne_ready
     global feat_matrix
-    if tsne_ready == False:
+    global num_samples
+
+    if tsne_running:
+        pass
+    elif tsne_ready == False:
         if feat_matrix == []:
             feat_matrix = np.matrix(feat_vector)
         else:
@@ -60,8 +68,10 @@ def on_feature_vector(feat_vector):
         if feat_matrix.shape[0] % 10 == 0:
             print(feat_matrix.shape[0])
         
-        if feat_matrix.shape[0] == 120:
+        if feat_matrix.shape[0] >= num_samples:
+            tsne_running = True
             plot_tsne()
+            tsne_running = False
             tsne_ready = True
     else:
         closestDistance0 = 10000000000.0
@@ -70,7 +80,8 @@ def on_feature_vector(feat_vector):
         closestIndex0 = 0
         closestIndex1 = 0
         closestIndex2 = 0
-        for i in range(0, np.size(feat_matrix, 0)):
+        print(feat_matrix.shape)
+        for i in range(0, num_samples):
             distance = np.linalg.norm(feat_matrix[i, :] - feat_vector)
             if distance < closestDistance0:
                 closestDistance2 = closestDistance1
