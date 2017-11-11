@@ -1,7 +1,9 @@
-var port_python = process.argv[2];
-var port_receive = process.argv[3];
-var port_of = process.argv[4];
-var port_http = process.argv[5];
+// $ node server.js 13000
+
+var port_python = 12100;
+var port_receive = 12200;
+var port_of = process.argv[2];
+var port_http = 3000;
 
 var express = require('express');
 var app = express();

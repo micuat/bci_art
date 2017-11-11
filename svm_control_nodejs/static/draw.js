@@ -1,6 +1,6 @@
 // p5js
 
-var N = 2;
+var N = 3;
 
 var gauge;
 function Gauge() {
@@ -14,7 +14,7 @@ function Gauge() {
     b = 50;
     rect(/*width * 0.5 - b * 0.5*/width - b, 0, b, height);
     if(this.s < this.sMax) {
-      this.s += 0.01;
+      this.s += 0.05;
       if(this.s > this.sMax) this.s = this.sMax;
     }
     fill(0, 128);
@@ -79,6 +79,17 @@ function setup() {
   frameRate(10);
   pcanvas.parent('p5container');
   reset();
+
+  for(let i = 0; i < N; i++) {
+    let button = createButton("button " + i);
+    button.mousePressed(function() {
+      socket.emit('bci command', "/bci_art/svm/start/" + i);
+    });
+  }
+  let button = createButton("reset");
+  button.mousePressed(function() {
+    reset();
+  });
 }
 
 function windowResized() {
@@ -96,18 +107,6 @@ function draw() {
 }
 
 function mousePressed() {
-  if(mouseY > 0 && mouseY < height && mouseX > 0 && mouseX < width) { // on canvas
-    b = 50;
-    if(/*width * 0.5 - b * 0.5*/width - b < mouseX/* && mouseX < width * 0.5 + b * 0.5*/) { // reset button
-      reset();
-    }
-    else {
-      for(var i = 0; i < N; i++) {
-        if(hemis[i].inside(mouseX, mouseY))
-          socket.emit('bci command', "/bci_art/svm/start/" + i);
-      }
-    }
-  }
 }
 
 // socket.io

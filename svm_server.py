@@ -1,6 +1,8 @@
 # Muse command
 # muse-io --device Muse-70]2 --osc 'osc.udp://localhost:12000'
 
+# $ python -u svm_server.py 12000 13000
+
 import sys
 import threading
 from time import sleep
@@ -11,12 +13,12 @@ from pythonosc import udp_client
 from pythonosc import dispatcher
 from pythonosc import osc_server
 
-N = 2
+N = 3
 
 port_muse = int(sys.argv[1])
-port_node_listen = int(sys.argv[2])
-port_node_send = int(sys.argv[3])
-port_of = int(sys.argv[4])
+port_node_listen = 12100
+port_node_send = 12200
+port_of = int(sys.argv[2])
 
 # node.js
 client = udp_client.SimpleUDPClient("localhost", port_node_send)
