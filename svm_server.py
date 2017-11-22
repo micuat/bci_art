@@ -13,7 +13,7 @@ from pythonosc import udp_client
 from pythonosc import dispatcher
 from pythonosc import osc_server
 
-N = 3
+N = 2
 
 port_muse = int(sys.argv[1])
 port_node_listen = 12100
