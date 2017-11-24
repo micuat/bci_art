@@ -123,16 +123,13 @@ def on_feature_vector(feat_vector):
         y = np.zeros((datasets[0].feat_matrix.shape[0], 1))
         for i in range(1, N):
             y = np.concatenate((y, i * np.ones((datasets[i].feat_matrix.shape[0], 1))))
-        classifier.fit(X, y)
+        classifier.fit(X, y.ravel())
 
         classifier_ready = True
-
-        print("prep m")
-        print("send")
-        client.send_message("/bci_art/svm/score", classifier.score(X, y))
+        client.send_message("/bci_art/svm/score", classifier.score(X, y.ravel()))
 
     if classifier_ready:
-        prediction_result = classifier.predict(feat_vector)
+        prediction_result = classifier.predict(feat_vector.reshape(1, -1))
         print(prediction_result)
         client.send_message("/bci_art/svm/prediction", prediction_result)
         try:
