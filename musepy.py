@@ -35,7 +35,7 @@ class Musepy:
 
         NFFT = self.nextpow2(winSampleLength)
         Y = np.fft.fft(dataWinCenteredHam, n=NFFT, axis=0)/winSampleLength
-        PSD = 2*np.abs(Y[0:NFFT/2,:])
+        PSD = 2*np.abs(Y[0:int(NFFT/2),:])
         f = Fs/2*np.linspace(0,1,NFFT/2)
 
         # SPECTRAL FEATURES
@@ -78,4 +78,4 @@ class Musepy:
             self.eegArray = self.eegArray[0:220-1]
             feat_vector = self.compute_feature_vector(self.eegArray, 220)
             self.func_feature_vector(feat_vector)
-            self.eegArray = self.eegArray[220/4:]
+            self.eegArray = self.eegArray[int(220/4):]
