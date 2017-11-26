@@ -13,7 +13,8 @@ from pythonosc import udp_client
 from pythonosc import dispatcher
 from pythonosc import osc_server
 
-N = 2
+Ndefault = 2
+Nmax = 16
 
 port_muse = int(sys.argv[1])
 port_node_listen = 12100
@@ -23,7 +24,6 @@ port_of = int(sys.argv[2])
 # node.js
 client = udp_client.SimpleUDPClient("localhost", port_node_send)
 clientof = udp_client.SimpleUDPClient("localhost", port_of)
-
 classifier_ready = False
 
 class Dataset:
@@ -71,45 +71,41 @@ def control_record_callback(path, *args):
     print(args)
     command = path.split("/")[4]
     if classifier_ready:
-        reset()
+        reset(len(datasets))
 
     client.send_message("/bci_art/svm/start/" + command + "/received", ())
+    print(command)
     datasets[int(command)].startRecording()
-    for i in range(0, N):
+    for i in range(0, len(datasets)):
         if i != int(command) and datasets[i].isRecording():
             datasets[i].initialize()
 
-def reset():
+def reset(N):
+    global datasets
+    datasets = [Dataset(0)]
+    for i in range(1, N):
+        datasets.append(Dataset(i))
     for i in range(0, N):
         datasets[i].initialize()
     global classifier_ready
     classifier_ready = False
+    print(len(datasets))
 
 def reset_callback(path, *args):
-    reset()
-
-datasets = [Dataset(0)]
-for i in range(1, N):
-    datasets.append(Dataset(i))
-
-dispatch = dispatcher.Dispatcher()
-
-for i in range(0, N):
-    dispatch.map("/bci_art/svm/start/" + str(i), control_record_callback)
-dispatch.map("/bci_art/svm/reset", reset_callback)
-server = osc_server.ThreadingOSCUDPServer(("127.0.0.1", port_node_listen), dispatch)
-server_thread = threading.Thread(target=server.serve_forever)
-server_thread.start()
+    if len(args) > 0:
+        reset(args[0])
+    else:
+        reset(Ndefault)
 
 def on_feature_vector(feat_vector):
     print(feat_vector)
-    for i in range(0, N):
-        datasets[i].record(feat_vector)
+    for dataset in datasets:
+        dataset.record(feat_vector)
 
     global classifier_ready
     dataset_ready = True
-    for i in range(0, N):
-        if datasets[i].state != "done":
+    for dataset in datasets:
+        if dataset.state != "done":
             dataset_ready = False
 
     if classifier_ready == False and dataset_ready:
@@ -117,11 +113,11 @@ def on_feature_vector(feat_vector):
         classifier = svm.SVC()
 
         X = datasets[0].feat_matrix
-        for i in range(1, N):
+        for i in range(1, len(datasets)):
             X = np.concatenate((X, datasets[i].feat_matrix))
     
         y = np.zeros((datasets[0].feat_matrix.shape[0], 1))
-        for i in range(1, N):
+        for i in range(1, len(datasets)):
             y = np.concatenate((y, i * np.ones((datasets[i].feat_matrix.shape[0], 1))))
         classifier.fit(X, y.ravel())
 
@@ -137,7 +133,29 @@ def on_feature_vector(feat_vector):
         except OSCClientError:
             print("caught osc error")
 
-# musepy
-mp = musepy.Musepy(port_muse)
-mp.set_on_feature_vector(on_feature_vector)
-mp.start()
+
+
+def main():
+    global datasets
+    datasets = [Dataset(0)]
+    for i in range(1, Ndefault):
+        datasets.append(Dataset(i))
+    for i in range(0, Ndefault):
+        datasets[i].initialize()
+
+    dispatch = dispatcher.Dispatcher()
+
+    for i in range(0, Nmax):
+        dispatch.map("/bci_art/svm/start/" + str(i), control_record_callback)
+    dispatch.map("/bci_art/svm/reset", reset_callback)
+    server = osc_server.ThreadingOSCUDPServer(("127.0.0.1", port_node_listen), dispatch)
+    server_thread = threading.Thread(target=server.serve_forever)
+    server_thread.start()
+
+    # musepy
+    mp = musepy.Musepy(port_muse)
+    mp.set_on_feature_vector(on_feature_vector)
+    mp.start()
+
+if __name__ == "__main__":
+    main()
