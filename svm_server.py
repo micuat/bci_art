@@ -6,8 +6,10 @@
 import sys
 import threading
 from time import sleep
+import time
 import numpy as np
 from sklearn import svm
+from sklearn.manifold import TSNE
 import musepy
 from pythonosc import udp_client
 from pythonosc import dispatcher
@@ -24,7 +26,14 @@ port_of = int(sys.argv[2])
 # node.js
 client = udp_client.SimpleUDPClient("localhost", port_node_send)
 clientof = udp_client.SimpleUDPClient("localhost", port_of)
+
+# SVM
 classifier_ready = False
+
+# t-SNE
+feat_matrix = []
+tsne_running = False
+tsne_ready = False
 
 class Dataset:
     state = "none"
@@ -89,6 +98,12 @@ def reset(N):
         datasets[i].initialize()
     global classifier_ready
     classifier_ready = False
+    global tsne_running
+    global tsne_ready
+    global feat_matrix
+    tsne_running = False
+    tsne_ready = False
+    feat_matrix = []
     print(len(datasets))
 
 def reset_callback(path, *args):
@@ -103,6 +118,11 @@ def on_feature_vector(feat_vector):
         dataset.record(feat_vector)
 
     global classifier_ready
+
+    global tsne_running
+    global tsne_ready
+    global feat_matrix
+
     dataset_ready = True
     for dataset in datasets:
         if dataset.state != "done":
@@ -115,7 +135,7 @@ def on_feature_vector(feat_vector):
         X = datasets[0].feat_matrix
         for i in range(1, len(datasets)):
             X = np.concatenate((X, datasets[i].feat_matrix))
-    
+
         y = np.zeros((datasets[0].feat_matrix.shape[0], 1))
         for i in range(1, len(datasets)):
             y = np.concatenate((y, i * np.ones((datasets[i].feat_matrix.shape[0], 1))))
@@ -133,7 +153,74 @@ def on_feature_vector(feat_vector):
         except OSCClientError:
             print("caught osc error")
 
+    # t-SNE
+    if tsne_running: # calculating already
+        pass
+    elif tsne_ready == False:
+        if dataset_ready: # run t-sne
+            tsne_running = True
+            plot_tsne()
+            tsne_running = False
+            tsne_ready = True
+            client.send_message("/muse/tsne/done", [])
+    else:
+        closestDistance0 = 10000000000.0
+        closestDistance1 = 10000000000.0
+        closestDistance2 = 10000000000.0
+        closestIndex0 = 0
+        closestIndex1 = 0
+        closestIndex2 = 0
+        for i in range(0, feat_matrix.shape[0]):
+            distance = np.linalg.norm(feat_matrix[i, :] - feat_vector)
+            if distance < closestDistance0:
+                closestDistance2 = closestDistance1
+                closestDistance1 = closestDistance0
+                closestDistance0 = distance
+                closestIndex2 = closestIndex1
+                closestIndex1 = closestIndex0
+                closestIndex0 = i
+            elif distance < closestDistance1:
+                closestDistance2 = closestDistance1
+                closestDistance1 = distance
+                closestIndex2 = closestIndex1
+                closestIndex1 = i
+            elif distance < closestDistance2:
+                closestDistance2 = distance
+                closestIndex2 = i
+        print(str(closestIndex0) + " " + str(closestIndex1) + " " + str(closestIndex2))
+        print(tsneResult[closestIndex0, :])
+        print(tsneResult[closestIndex1, :])
+        print(tsneResult[closestIndex2, :])
 
+        closestDistanceTotal = closestDistance0 + closestDistance1 + closestDistance2
+        interpolated = (tsneResult[closestIndex0, :] * (closestDistance1 + closestDistance2) + tsneResult[closestIndex1, :] * (closestDistance1 + closestDistance0) + tsneResult[closestIndex2, :] * (closestDistance0 + closestDistance1)) / closestDistanceTotal * 0.5
+        print(interpolated)
+        client.send_message("/muse/tsne", (interpolated[0], interpolated[1], closestIndex0))
+
+
+def normalize(p):
+    max = np.amax(p)
+    min = np.amin(p)
+    return (p - min) / (max - min)
+
+def plot_tsne():
+    global feat_matrix
+    feat_matrix = datasets[0].feat_matrix
+    for i in range(1, len(datasets)):
+        feat_matrix = np.concatenate((feat_matrix, datasets[i].feat_matrix))
+
+    global tsneResult
+    model = TSNE(n_components=2, random_state=0, learning_rate=100)
+    tsneResult = model.fit_transform(feat_matrix)
+    tsneResult[:,0] = normalize(tsneResult[:,0])
+    tsneResult[:,1] = normalize(tsneResult[:,1])
+    print(tsneResult)
+
+    timestamp = timestr = time.strftime("%Y%m%d-%H%M%S")
+    np.save('t0.npy', feat_matrix)
+    np.save('%st0.npy' % timestamp, feat_matrix)
+    np.save('tsneResult.npy', tsneResult)
+    np.save('%stsneResult.npy' % timestamp, tsneResult)
 
 def main():
     global datasets
