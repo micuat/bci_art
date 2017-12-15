@@ -12,7 +12,7 @@ import musepy
 port_muse = int(sys.argv[1])
 port_node = int(sys.argv[2])
 
-num_samples = 120
+num_samples = 240
 
 # musepy
 mp = musepy.Musepy(port_muse)

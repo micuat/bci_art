@@ -78,4 +78,4 @@ class Musepy:
             self.eegArray = self.eegArray[0:220-1]
             feat_vector = self.compute_feature_vector(self.eegArray, 220)
             self.func_feature_vector(feat_vector)
-            self.eegArray = self.eegArray[int(220/4):]
+            self.eegArray = self.eegArray[int(220/8):]
