@@ -107,7 +107,7 @@ def on_feature_vector(feat_vector):
         closestDistanceTotal = closestDistance0 + closestDistance1 + closestDistance2
         interpolated = (tsneResult[closestIndex0, :] * (closestDistance1 + closestDistance2) + tsneResult[closestIndex1, :] * (closestDistance1 + closestDistance0) + tsneResult[closestIndex2, :] * (closestDistance0 + closestDistance1)) / closestDistanceTotal * 0.5
         print(interpolated)
-        client.send_message("/muse/tsne", (interpolated[0], interpolated[1], closestIndex0))
+        client.send_message("/muse/tsne", (float(interpolated[0]), float(interpolated[1]), int(closestIndex0)))
 
 mp.set_on_feature_vector(on_feature_vector)
 
