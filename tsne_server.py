@@ -51,7 +51,7 @@ tsne_ready = False
 
 def on_feature_vector(feat_vector):
     print(feat_vector)
-    
+
     global tsne_running
     global tsne_ready
     global feat_matrix
@@ -64,10 +64,12 @@ def on_feature_vector(feat_vector):
             feat_matrix = np.matrix(feat_vector)
         else:
             feat_matrix = np.concatenate((feat_matrix, [feat_vector]))
-        
+
+        client.send_message("/muse/tsne/record", (int(feat_matrix.shape[0] - 1)))
+
         if feat_matrix.shape[0] % 10 == 0:
             print(feat_matrix.shape[0])
-        
+
         if feat_matrix.shape[0] >= num_samples:
             tsne_running = True
             plot_tsne()
