@@ -33,10 +33,10 @@ io.on('connection', function(socket){
         svm_python.send(msg);
         console.log('message: ' + msg);
     });
-    socket.on('osc command', function(msg){
-        console.log('message: ' + msg);
-        of_client.send(msg.address, parseInt(msg.data));
-    });
+    // socket.on('osc command', function(msg){
+    //     console.log('message: ' + msg);
+    //     of_client.send(msg.address, parseInt(msg.data));
+    // });
 });
 
 http.listen(port_http, function(){

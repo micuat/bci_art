@@ -7,8 +7,9 @@ class Musepy:
     eegArray = []
 
     def __init__(self, port):
+        print("osc listening to " + str(port))
         dispatch = dispatcher.Dispatcher()
-        dispatch.map("/muse/eeg", self.eeg_callback)
+        dispatch.map("/eeg", self.eeg_callback)
         self.server = osc_server.ThreadingOSCUDPServer(("127.0.0.1", port), dispatch)
         self.server_thread = threading.Thread(target=self.server.serve_forever)
 

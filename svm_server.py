@@ -153,51 +153,6 @@ def on_feature_vector(feat_vector):
         except OSCClientError:
             print("caught osc error")
 
-    # t-SNE
-    if tsne_running: # calculating already
-        pass
-    elif tsne_ready == False:
-        if dataset_ready: # run t-sne
-            tsne_running = True
-            plot_tsne()
-            tsne_running = False
-            tsne_ready = True
-            client.send_message("/muse/tsne/done", [])
-    else:
-        closestDistance0 = 10000000000.0
-        closestDistance1 = 10000000000.0
-        closestDistance2 = 10000000000.0
-        closestIndex0 = 0
-        closestIndex1 = 0
-        closestIndex2 = 0
-        for i in range(0, feat_matrix.shape[0]):
-            distance = np.linalg.norm(feat_matrix[i, :] - feat_vector)
-            if distance < closestDistance0:
-                closestDistance2 = closestDistance1
-                closestDistance1 = closestDistance0
-                closestDistance0 = distance
-                closestIndex2 = closestIndex1
-                closestIndex1 = closestIndex0
-                closestIndex0 = i
-            elif distance < closestDistance1:
-                closestDistance2 = closestDistance1
-                closestDistance1 = distance
-                closestIndex2 = closestIndex1
-                closestIndex1 = i
-            elif distance < closestDistance2:
-                closestDistance2 = distance
-                closestIndex2 = i
-        print(str(closestIndex0) + " " + str(closestIndex1) + " " + str(closestIndex2))
-        print(tsneResult[closestIndex0, :])
-        print(tsneResult[closestIndex1, :])
-        print(tsneResult[closestIndex2, :])
-
-        closestDistanceTotal = closestDistance0 + closestDistance1 + closestDistance2
-        interpolated = (tsneResult[closestIndex0, :] * (closestDistance1 + closestDistance2) + tsneResult[closestIndex1, :] * (closestDistance1 + closestDistance0) + tsneResult[closestIndex2, :] * (closestDistance0 + closestDistance1)) / closestDistanceTotal * 0.5
-        print(interpolated)
-        client.send_message("/muse/tsne", (interpolated[0], interpolated[1], closestIndex0))
-
-
 def normalize(p):
     max = np.amax(p)
     min = np.amin(p)
