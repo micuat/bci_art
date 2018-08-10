@@ -1,0 +1,27 @@
+{
+  "name": "bci-art",
+  "version": "0.0.1",
+  "description": "simple machine learning for bci",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js 13000"
+  },
+  "dependencies": {
+    "node-osc": "^2.1.0",
+    "express": "^4.16.2",
+    "serve-static": "^1.13.1",
+    "socket.io": "^2.0.4"
+  },
+  "engines": {
+    "node": "^8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/micuat/bci_art"
+  },
+  "keywords": [
+    "node"
+  ],
+  "author": "Naoto Hieda",
+  "license": "MIT"
+}
